@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>복리 눈덩이 계산기</title>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+    body { background: #f8fafc; color: #1e293b; padding: 40px 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+    .container { max-width: 900px; width: 100%; background: #fff; border-radius: 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 40px; }
+    header { text-align: center; margin-bottom: 32px; }
+    header h1 { font-size: 28px; font-weight: 800; color: #1e3a8a; margin-bottom: 8px; }
+    header p { color: #64748b; font-size: 15px; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 28px; background: #f1f5f9; border-radius: 12px; padding: 4px; }
+    .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 9px; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: #fff; color: #1e3a8a; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+    @media (max-width: 640px) { .layout { grid-template-columns: 1fr; } .container { padding: 24px; } body { padding: 20px 12px; } }
+
+    .inputs { display: flex; flex-direction: column; gap: 18px; }
+    .field label { display: block; font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 6px; }
+    .iw { display: flex; align-items: center; border: 1.5px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #fff; transition: border-color 0.2s; }
+    .iw:focus-within { border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30,58,138,0.1); }
+    .iw input { flex: 1; min-width: 0; padding: 13px 10px 13px 14px; border: none; font-size: 16px; font-weight: 600; text-align: right; outline: none; background: transparent; color: #1e293b; }
+    .iw .unit { padding: 0 14px 0 4px; font-size: 14px; font-weight: 600; color: #64748b; white-space: nowrap; flex-shrink: 0; }
+
+    .result { background: #eff6ff; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; justify-content: center; border: 1px solid rgba(30,58,138,0.08); }
+    .r-title { font-size: 12px; font-weight: 700; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .r-amount { font-size: 32px; font-weight: 900; color: #1e3a8a; margin-bottom: 22px; line-height: 1.2; }
+    .divider { height: 1px; background: rgba(30,58,138,0.1); margin-bottom: 18px; }
+    .d-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 15px; }
+    .d-row:last-of-type { margin-bottom: 0; }
+    .d-label { color: #64748b; font-weight: 500; }
+    .d-val { color: #1e293b; font-weight: 700; }
+    .d-val.accent { color: #d97706; }
+    .note { margin-top: 14px; font-size: 13px; color: #64748b; line-height: 1.6; background: rgba(30,58,138,0.05); border-radius: 8px; padding: 10px 14px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>복리 눈덩이 계산기</h1>
+    <p>원금에 매달 더하는 저금액까지 계산해 드려요 ❄️</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('forward', this)">📈 복리 계산</button>
+    <button class="tab-btn" onclick="switchTab('rev-pmt', this)">🐷 월 저금액 역산</button>
+    <button class="tab-btn" onclick="switchTab('rev-yr', this)">⏳ 기간 역산</button>
+  </div>
+
+  <!-- 탭 1: 순산 -->
+  <div class="tab-panel active" id="tab-forward">
+    <div class="layout">
+      <div class="inputs">
+        <div class="field"><label>💰 현재 원금</label><div class="iw"><input type="text" inputmode="numeric" id="f-init" value="1,000,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>🐷 매월 저금액</label><div class="iw"><input type="text" inputmode="numeric" id="f-pmt" value="300,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>📊 연 수익률</label><div class="iw"><input type="number" id="f-rate" value="5.0" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
+        <div class="field"><label>⏳ 저축 기간</label><div class="iw"><input type="number" id="f-years" value="5" min="1" max="100"><span class="unit">년</span></div></div>
+      </div>
+      <div class="result">
+        <div class="r-title">만기 시 예상 금액 (복리)</div>
+        <div class="r-amount" id="f-total">₩ 0</div>
+        <div class="divider"></div>
+        <div class="d-row"><span class="d-label">총 납입 원금</span><span class="d-val" id="f-principal">₩ 0</span></div>
+        <div class="d-row"><span class="d-label">쌓인 총 이자</span><span class="d-val accent" id="f-interest">₩ 0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 탭 2: 월 저금액 역산 -->
+  <div class="tab-panel" id="tab-rev-pmt">
+    <div class="layout">
+      <div class="inputs">
+        <div class="field"><label>🎯 목표 금액</label><div class="iw"><input type="text" inputmode="numeric" id="rp-goal" value="50,000,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>💰 현재 원금</label><div class="iw"><input type="text" inputmode="numeric" id="rp-init" value="1,000,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>📊 연 수익률</label><div class="iw"><input type="number" id="rp-rate" value="5.0" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
+        <div class="field"><label>⏳ 저축 기간</label><div class="iw"><input type="number" id="rp-years" value="10" min="1" max="100"><span class="unit">년</span></div></div>
+      </div>
+      <div class="result">
+        <div class="r-title">매월 필요한 저금액</div>
+        <div class="r-amount" id="rp-pmt">₩ 0</div>
+        <div class="divider"></div>
+        <div class="d-row"><span class="d-label">총 납입 원금</span><span class="d-val" id="rp-principal">₩ 0</span></div>
+        <div class="d-row"><span class="d-label">이자로 버는 금액</span><span class="d-val accent" id="rp-interest">₩ 0</span></div>
+        <div class="note" id="rp-note"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 탭 3: 기간 역산 -->
+  <div class="tab-panel" id="tab-rev-yr">
+    <div class="layout">
+      <div class="inputs">
+        <div class="field"><label>🎯 목표 금액</label><div class="iw"><input type="text" inputmode="numeric" id="ry-goal" value="50,000,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>💰 현재 원금</label><div class="iw"><input type="text" inputmode="numeric" id="ry-init" value="1,000,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>🐷 매월 저금액</label><div class="iw"><input type="text" inputmode="numeric" id="ry-pmt" value="300,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>📊 연 수익률</label><div class="iw"><input type="number" id="ry-rate" value="5.0" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
+      </div>
+      <div class="result">
+        <div class="r-title">목표 달성까지 필요한 기간</div>
+        <div class="r-amount" id="ry-years">— 년 — 개월</div>
+        <div class="divider"></div>
+        <div class="d-row"><span class="d-label">총 납입 원금</span><span class="d-val" id="ry-principal">₩ 0</span></div>
+        <div class="d-row"><span class="d-label">이자로 버는 금액</span><span class="d-val accent" id="ry-interest">₩ 0</span></div>
+        <div class="note" id="ry-note"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function addComma(v) { return Math.round(v).toLocaleString('ko-KR'); }
+  function fmt(v) { return '₩ ' + addComma(v); }
+  function parseVal(id) { return parseFloat((document.getElementById(id).value || '0').replace(/,/g, '')) || 0; }
+
+  function bindCommaInput(id, calcFn) {
+    const el = document.getElementById(id);
+    el.addEventListener('input', function () {
+      const raw = this.value.replace(/,/g, '').replace(/[^0-9]/g, '');
+      const num = parseInt(raw, 10);
+      const pos = this.selectionStart;
+      const prevLen = this.value.length;
+      this.value = isNaN(num) ? '' : num.toLocaleString('ko-KR');
+      const diff = this.value.length - prevLen;
+      try { this.setSelectionRange(pos + diff, pos + diff); } catch (e) {}
+      calcFn();
+    });
+  }
+
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function calcForward() {
+    const P = parseVal('f-init'), PMT = parseVal('f-pmt');
+    const rate = parseFloat(document.getElementById('f-rate').value) || 0;
+    const years = parseInt(document.getElementById('f-years').value) || 0;
+    const r = (rate / 100) / 12, n = years * 12;
+    let total = r === 0 ? P + PMT * n : P * Math.pow(1 + r, n) + PMT * (Math.pow(1 + r, n) - 1) / r;
+    const principal = P + PMT * n;
+    document.getElementById('f-total').textContent = fmt(total);
+    document.getElementById('f-principal').textContent = fmt(principal);
+    document.getElementById('f-interest').textContent = fmt(total - principal);
+  }
+
+  function calcRevPmt() {
+    const goal = parseVal('rp-goal'), P = parseVal('rp-init');
+    const rate = parseFloat(document.getElementById('rp-rate').value) || 0;
+    const years = parseInt(document.getElementById('rp-years').value) || 0;
+    const r = (rate / 100) / 12, n = years * 12;
+    const noteEl = document.getElementById('rp-note');
+    if (goal <= 0 || years <= 0) { document.getElementById('rp-pmt').textContent = '—'; noteEl.textContent = ''; return; }
+    let pmt;
+    if (r === 0) { pmt = (goal - P) / n; }
+    else { const f = Math.pow(1 + r, n); pmt = (goal - P * f) * r / (f - 1); }
+    if (pmt < 0) {
+      document.getElementById('rp-pmt').textContent = '₩ 0';
+      const finalAmt = r === 0 ? P : P * Math.pow(1 + r, n);
+      document.getElementById('rp-principal').textContent = fmt(P);
+      document.getElementById('rp-interest').textContent = fmt(finalAmt - P);
+      noteEl.textContent = '현재 원금만으로도 목표 달성이 가능해요! 추가 저금 없이도 충분합니다.';
+      return;
+    }
+    const principal = P + pmt * n;
+    document.getElementById('rp-pmt').textContent = fmt(pmt);
+    document.getElementById('rp-principal').textContent = fmt(principal);
+    document.getElementById('rp-interest').textContent = fmt(goal - principal);
+    noteEl.textContent = '매월 ' + fmt(pmt) + ' 씩 ' + years + '년간 저금하면 목표를 달성할 수 있어요.';
+  }
+
+  function calcRevYears() {
+    const goal = parseVal('ry-goal'), P = parseVal('ry-init'), PMT = parseVal('ry-pmt');
+    const rate = parseFloat(document.getElementById('ry-rate').value) || 0;
+    const r = (rate / 100) / 12;
+    const noteEl = document.getElementById('ry-note');
+    if (goal <= 0) { document.getElementById('ry-years').textContent = '—'; noteEl.textContent = ''; return; }
+    if (P >= goal) {
+      document.getElementById('ry-years').textContent = '이미 달성!';
+      noteEl.textContent = '현재 원금이 이미 목표 금액 이상입니다.';
+      document.getElementById('ry-principal').textContent = fmt(P);
+      document.getElementById('ry-interest').textContent = fmt(0);
+      return;
+    }
+    if (PMT === 0 && r === 0) {
+      document.getElementById('ry-years').textContent = '달성 불가';
+      noteEl.textContent = '수익률과 매월 저금액이 모두 0이면 목표를 달성할 수 없어요.';
+      return;
+    }
+    function getTotal(n) {
+      if (r === 0) return P + PMT * n;
+      return P * Math.pow(1 + r, n) + (PMT > 0 ? PMT * (Math.pow(1 + r, n) - 1) / r : 0);
+    }
+    let lo = 1, hi = 1200, result = -1;
+    while (lo <= hi) { const mid = Math.floor((lo + hi) / 2); if (getTotal(mid) >= goal) { result = mid; hi = mid - 1; } else lo = mid + 1; }
+    if (result === -1) {
+      document.getElementById('ry-years').textContent = '100년 이상';
+      noteEl.textContent = '100년 이내에 목표 달성이 어렵습니다. 저금액이나 수익률을 높여보세요.';
+      document.getElementById('ry-principal').textContent = '—';
+      document.getElementById('ry-interest').textContent = '—';
+      return;
+    }
+    const yy = Math.floor(result / 12), mm = result % 12;
+    const principal = P + PMT * result;
+    const interest = goal - principal;
+    document.getElementById('ry-years').textContent = (yy > 0 ? yy + '년 ' : '') + (mm > 0 ? mm + '개월' : '');
+    document.getElementById('ry-principal').textContent = fmt(principal);
+    document.getElementById('ry-interest').textContent = fmt(Math.max(0, interest));
+    noteEl.textContent = '총 ' + addComma(result) + '개월 후 목표 ' + fmt(goal) + ' 달성! (원금 기여: ' + Math.round(principal / goal * 100) + '%, 이자 기여: ' + Math.round(Math.max(0, interest) / goal * 100) + '%)';
+  }
+
+  bindCommaInput('f-init', calcForward);
+  bindCommaInput('f-pmt', calcForward);
+  bindCommaInput('rp-goal', calcRevPmt);
+  bindCommaInput('rp-init', calcRevPmt);
+  bindCommaInput('ry-goal', calcRevYears);
+  bindCommaInput('ry-init', calcRevYears);
+  bindCommaInput('ry-pmt', calcRevYears);
+
+  ['f-rate', 'f-years'].forEach(id => document.getElementById(id).addEventListener('input', calcForward));
+  ['rp-rate', 'rp-years'].forEach(id => document.getElementById(id).addEventListener('input', calcRevPmt));
+  ['ry-rate'].forEach(id => document.getElementById(id).addEventListener('input', calcRevYears));
+
+  calcForward(); calcRevPmt(); calcRevYears();
+</script>
+</body>
+</html>
