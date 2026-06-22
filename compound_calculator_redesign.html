@@ -1,0 +1,254 @@
+
+<style>
+  .wrap { font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif; padding: 1.5rem 0; }
+
+  .hero { background: #1e3a8a; border-radius: 16px; padding: 24px 28px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .hero-left h2 { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+  .hero-left p { font-size: 13px; color: #93c5fd; }
+  .hero-badge { background: #2563eb; border-radius: 10px; padding: 8px 16px; text-align: center; }
+  .hero-badge .hb-label { font-size: 11px; color: #93c5fd; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .hero-badge .hb-val { font-size: 22px; font-weight: 900; color: #fff; line-height: 1.2; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 18px; }
+  .tab-btn { flex: 1; padding: 9px 6px; border: 1.5px solid #e2e8f0; background: #fff; border-radius: 10px; font-size: 12px; font-weight: 700; color: #64748b; cursor: pointer; transition: all 0.18s; }
+  .tab-btn.active { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .layout { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+  @media (max-width: 500px) { .layout { grid-template-columns: 1fr; } .hero { flex-direction: column; align-items: flex-start; } }
+
+  .inputs { display: flex; flex-direction: column; gap: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .iw { display: flex; align-items: center; border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #f8fafc; transition: all 0.18s; }
+  .iw:focus-within { border-color: #1e3a8a; background: #fff; box-shadow: 0 0 0 3px rgba(30,58,138,0.1); }
+  .iw input { flex: 1; min-width: 0; padding: 11px 8px 11px 12px; border: none; font-size: 15px; font-weight: 700; text-align: right; outline: none; background: transparent; color: #1e293b; }
+  .iw .unit { padding: 0 12px 0 2px; font-size: 13px; font-weight: 700; color: #94a3b8; white-space: nowrap; flex-shrink: 0; }
+
+  .result-panel { display: flex; flex-direction: column; gap: 10px; }
+
+  .res-main { background: #1e3a8a; border-radius: 12px; padding: 18px 20px; }
+  .res-main .rl { font-size: 11px; font-weight: 700; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .res-main .rv { font-size: 26px; font-weight: 900; color: #fff; line-height: 1.2; }
+
+  .res-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .res-card { border-radius: 10px; padding: 12px 14px; }
+  .res-card.blue { background: #eff6ff; }
+  .res-card.amber { background: #fffbeb; }
+  .res-card .rc-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 3px; }
+  .res-card.blue .rc-val { font-size: 14px; font-weight: 800; color: #1e40af; }
+  .res-card.amber .rc-val { font-size: 14px; font-weight: 800; color: #92400e; }
+
+  .note { font-size: 12px; color: #64748b; line-height: 1.6; background: #f1f5f9; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #1e3a8a; border-radius: 0 8px 8px 0; }
+</style>
+
+<div class="wrap">
+  <h2 class="sr-only">복리 계산기 — 순산, 월 저금액 역산, 기간 역산 세 가지 모드를 제공합니다.</h2>
+
+  <div class="hero">
+    <div class="hero-left">
+      <h2>복리 계산기</h2>
+      <p>목표 금액까지의 길을 계산해 드려요</p>
+    </div>
+    <div class="hero-badge">
+      <div class="hb-label">만기 예상액</div>
+      <div class="hb-val" id="hero-val">₩ —</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('forward',this)">📈 복리 계산</button>
+    <button class="tab-btn" onclick="switchTab('rev-pmt',this)">🐷 월 저금액 역산</button>
+    <button class="tab-btn" onclick="switchTab('rev-yr',this)">⏳ 기간 역산</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-forward">
+    <div class="layout">
+      <div class="inputs">
+        <div class="field"><label>💰 현재 원금</label><div class="iw"><input type="text" inputmode="numeric" id="f-init" value="1,000,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>🐷 매월 저금액</label><div class="iw"><input type="text" inputmode="numeric" id="f-pmt" value="300,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>📊 연 수익률</label><div class="iw"><input type="number" id="f-rate" value="5.0" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
+        <div class="field"><label>⏳ 저축 기간</label><div class="iw"><input type="number" id="f-years" value="5" min="1" max="100"><span class="unit">년</span></div></div>
+      </div>
+      <div class="result-panel">
+        <div class="res-main">
+          <div class="rl">만기 시 예상 금액 (복리)</div>
+          <div class="rv" id="f-total">₩ 0</div>
+        </div>
+        <div class="res-cards">
+          <div class="res-card blue"><div class="rc-label">총 납입 원금</div><div class="rc-val" id="f-principal">₩ 0</div></div>
+          <div class="res-card amber"><div class="rc-label">쌓인 총 이자</div><div class="rc-val" id="f-interest">₩ 0</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-rev-pmt">
+    <div class="layout">
+      <div class="inputs">
+        <div class="field"><label>🎯 목표 금액</label><div class="iw"><input type="text" inputmode="numeric" id="rp-goal" value="50,000,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>💰 현재 원금</label><div class="iw"><input type="text" inputmode="numeric" id="rp-init" value="1,000,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>📊 연 수익률</label><div class="iw"><input type="number" id="rp-rate" value="5.0" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
+        <div class="field"><label>⏳ 저축 기간</label><div class="iw"><input type="number" id="rp-years" value="10" min="1" max="100"><span class="unit">년</span></div></div>
+      </div>
+      <div class="result-panel">
+        <div class="res-main">
+          <div class="rl">매월 필요한 저금액</div>
+          <div class="rv" id="rp-pmt">₩ 0</div>
+        </div>
+        <div class="res-cards">
+          <div class="res-card blue"><div class="rc-label">총 납입 원금</div><div class="rc-val" id="rp-principal">₩ 0</div></div>
+          <div class="res-card amber"><div class="rc-label">이자로 버는 돈</div><div class="rc-val" id="rp-interest">₩ 0</div></div>
+        </div>
+        <div class="note" id="rp-note"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-rev-yr">
+    <div class="layout">
+      <div class="inputs">
+        <div class="field"><label>🎯 목표 금액</label><div class="iw"><input type="text" inputmode="numeric" id="ry-goal" value="50,000,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>💰 현재 원금</label><div class="iw"><input type="text" inputmode="numeric" id="ry-init" value="1,000,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>🐷 매월 저금액</label><div class="iw"><input type="text" inputmode="numeric" id="ry-pmt" value="300,000"><span class="unit">원</span></div></div>
+        <div class="field"><label>📊 연 수익률</label><div class="iw"><input type="number" id="ry-rate" value="5.0" min="0" max="100" step="0.1"><span class="unit">%</span></div></div>
+      </div>
+      <div class="result-panel">
+        <div class="res-main">
+          <div class="rl">목표 달성까지 필요한 기간</div>
+          <div class="rv" id="ry-years">— 년 — 개월</div>
+        </div>
+        <div class="res-cards">
+          <div class="res-card blue"><div class="rc-label">총 납입 원금</div><div class="rc-val" id="ry-principal">₩ 0</div></div>
+          <div class="res-card amber"><div class="rc-label">이자로 버는 돈</div><div class="rc-val" id="ry-interest">₩ 0</div></div>
+        </div>
+        <div class="note" id="ry-note"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function addComma(v) { return Math.round(v).toLocaleString('ko-KR'); }
+function fmt(v) { return '₩ ' + addComma(v); }
+function parseVal(id) { return parseFloat((document.getElementById(id).value||'0').replace(/,/g,''))||0; }
+
+function bindCommaInput(id, fn) {
+  document.getElementById(id).addEventListener('input', function() {
+    const raw = this.value.replace(/,/g,'').replace(/[^0-9]/g,'');
+    const num = parseInt(raw,10);
+    const pos = this.selectionStart, prevLen = this.value.length;
+    this.value = isNaN(num) ? '' : num.toLocaleString('ko-KR');
+    const diff = this.value.length - prevLen;
+    try { this.setSelectionRange(pos+diff, pos+diff); } catch(e){}
+    fn();
+  });
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name==='forward') calcForward();
+  else if (name==='rev-pmt') calcRevPmt();
+  else calcRevYears();
+}
+
+function setHero(val) { document.getElementById('hero-val').textContent = val; }
+
+function calcForward() {
+  const P=parseVal('f-init'), PMT=parseVal('f-pmt');
+  const rate=parseFloat(document.getElementById('f-rate').value)||0;
+  const years=parseInt(document.getElementById('f-years').value)||0;
+  const r=(rate/100)/12, n=years*12;
+  let total = r===0 ? P+PMT*n : P*Math.pow(1+r,n)+PMT*(Math.pow(1+r,n)-1)/r;
+  const principal=P+PMT*n;
+  document.getElementById('f-total').textContent=fmt(total);
+  document.getElementById('f-principal').textContent=fmt(principal);
+  document.getElementById('f-interest').textContent=fmt(total-principal);
+  setHero(fmt(total));
+}
+
+function calcRevPmt() {
+  const goal=parseVal('rp-goal'), P=parseVal('rp-init');
+  const rate=parseFloat(document.getElementById('rp-rate').value)||0;
+  const years=parseInt(document.getElementById('rp-years').value)||0;
+  const r=(rate/100)/12, n=years*12;
+  const noteEl=document.getElementById('rp-note');
+  if(goal<=0||years<=0){document.getElementById('rp-pmt').textContent='—';noteEl.textContent='';setHero('₩ —');return;}
+  let pmt;
+  if(r===0){pmt=(goal-P)/n;}
+  else{const f=Math.pow(1+r,n);pmt=(goal-P*f)*r/(f-1);}
+  if(pmt<0){
+    document.getElementById('rp-pmt').textContent='₩ 0';
+    const finalAmt=r===0?P:P*Math.pow(1+r,n);
+    document.getElementById('rp-principal').textContent=fmt(P);
+    document.getElementById('rp-interest').textContent=fmt(finalAmt-P);
+    noteEl.textContent='현재 원금만으로도 목표 달성이 가능해요! 추가 저금 없이도 충분합니다.';
+    setHero('₩ 0 / 월');
+    return;
+  }
+  const principal=P+pmt*n;
+  document.getElementById('rp-pmt').textContent=fmt(pmt);
+  document.getElementById('rp-principal').textContent=fmt(principal);
+  document.getElementById('rp-interest').textContent=fmt(goal-principal);
+  noteEl.textContent='매월 '+fmt(pmt)+' 씩 '+years+'년간 저금하면 목표를 달성할 수 있어요.';
+  setHero(fmt(pmt)+' / 월');
+}
+
+function calcRevYears() {
+  const goal=parseVal('ry-goal'), P=parseVal('ry-init'), PMT=parseVal('ry-pmt');
+  const rate=parseFloat(document.getElementById('ry-rate').value)||0;
+  const r=(rate/100)/12;
+  const noteEl=document.getElementById('ry-note');
+  if(goal<=0){document.getElementById('ry-years').textContent='—';noteEl.textContent='';setHero('₩ —');return;}
+  if(P>=goal){
+    document.getElementById('ry-years').textContent='이미 달성!';
+    noteEl.textContent='현재 원금이 이미 목표 금액 이상입니다.';
+    document.getElementById('ry-principal').textContent=fmt(P);
+    document.getElementById('ry-interest').textContent=fmt(0);
+    setHero('즉시 달성');
+    return;
+  }
+  if(PMT===0&&r===0){
+    document.getElementById('ry-years').textContent='달성 불가';
+    noteEl.textContent='수익률과 매월 저금액이 모두 0이면 목표를 달성할 수 없어요.';
+    setHero('달성 불가');
+    return;
+  }
+  function getTotal(n){
+    if(r===0)return P+PMT*n;
+    return P*Math.pow(1+r,n)+(PMT>0?PMT*(Math.pow(1+r,n)-1)/r:0);
+  }
+  let lo=1,hi=1200,result=-1;
+  while(lo<=hi){const mid=Math.floor((lo+hi)/2);if(getTotal(mid)>=goal){result=mid;hi=mid-1;}else lo=mid+1;}
+  if(result===-1){
+    document.getElementById('ry-years').textContent='100년 이상';
+    noteEl.textContent='100년 이내에 목표 달성이 어렵습니다. 저금액이나 수익률을 높여보세요.';
+    document.getElementById('ry-principal').textContent='—';
+    document.getElementById('ry-interest').textContent='—';
+    setHero('100년+');
+    return;
+  }
+  const yy=Math.floor(result/12), mm=result%12;
+  const principal=P+PMT*result;
+  const interest=goal-principal;
+  const txt=(yy>0?yy+'년 ':'')+(mm>0?mm+'개월':'');
+  document.getElementById('ry-years').textContent=txt;
+  document.getElementById('ry-principal').textContent=fmt(principal);
+  document.getElementById('ry-interest').textContent=fmt(Math.max(0,interest));
+  noteEl.textContent='총 '+addComma(result)+'개월 후 목표 '+fmt(goal)+' 달성! (원금 기여: '+Math.round(principal/goal*100)+'%, 이자 기여: '+Math.round(Math.max(0,interest)/goal*100)+'%)';
+  setHero(txt);
+}
+
+bindCommaInput('f-init',calcForward); bindCommaInput('f-pmt',calcForward);
+bindCommaInput('rp-goal',calcRevPmt); bindCommaInput('rp-init',calcRevPmt);
+bindCommaInput('ry-goal',calcRevYears); bindCommaInput('ry-init',calcRevYears); bindCommaInput('ry-pmt',calcRevYears);
+
+['f-rate','f-years'].forEach(id=>document.getElementById(id).addEventListener('input',calcForward));
+['rp-rate','rp-years'].forEach(id=>document.getElementById(id).addEventListener('input',calcRevPmt));
+['ry-rate'].forEach(id=>document.getElementById(id).addEventListener('input',calcRevYears));
+
+calcForward(); calcRevPmt(); calcRevYears();
+</script>
